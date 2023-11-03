@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""Defines the FileStorage class."""
 """This module defines a class to manage file storage for hbnb clone"""
 import json
 
@@ -31,7 +32,7 @@ class FileStorage:
             className = cls.__name__
             for k, v in FileStorage.__objects.items():
                 if k.split('.')[0] == className:
-                    print_dict[k] = str(v)
+                    print_dict[k] = v
             return print_dict
         else:
             return FileStorage.__objects
@@ -71,3 +72,7 @@ class FileStorage:
                     self.all()[key] = classes[val['__class__']](**val)
         except FileNotFoundError:
             pass
+
+    def close(self):
+        """doc meth"""
+        self.reload()

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""This module defines a class to manage file storage for hbnb clone"""
+"""Defines the DBStorage engine"""
 from models.user import User
 from models.place import Place
 from models.state import State
@@ -13,7 +13,10 @@ from os import getenv
 
 
 class DBStorage:
-    """Class Docs"""
+    """Represents a database storage engine.
+    Attributes:
+        __engine (sqlalchemy.Engine): The working SQLAlchemy engine.
+        __session (sqlalchemy.Session): The working SQLAlchemy session."""
 
     __engine = None
     __session = None
@@ -35,30 +38,53 @@ class DBStorage:
             Base.metadata.drop_all(self.__engine)
 
     def reload(self):
-        """ reload method """
+        """ Create all tables in the database and initialize a new session """
         Base.metadata.create_all(self.__engine)
         Session = scoped_session(
             sessionmaker(bind=self.__engine, expire_on_commit=False)
         )
         self.__session = Session()
 
-    def all(self, cls=None):
+    def all(self, cls=None, id=None):
         """
-        query all classes or specific one"""
+        Query on the curret database session all objects of the given class.
+        If cls is None, queries all types of objects.
+        Return:
+            Dict of queried classes in the format <class name>.<obj id> = obj.
+        """
         allClasses = [User, Place, State, City, Amenity, Review]
         result = {}
+
         if cls is not None:
-            for obj in self.__session.query(cls).all():
-                ClassName = obj.__class__.__name__
-                keyName = ClassName + "." + obj.id
-                result[keyName] = obj
+            if id is not None:
+                obj = self.__session.query(cls).get(id)
+                if obj is not None:
+                    ClassName = obj.__class__.__name__
+                    keyName = ClassName + "." + str(obj.id)
+                    result[keyName] = obj
+            else:
+                for obj in self.__session.query(cls).all():
+                    ClassName = obj.__class__.__name__
+                    keyName = ClassName + "." + str(obj.id)
+                    result[keyName] = obj
         else:
             for clss in allClasses:
-                for obj in self.__session.query(clss).all():
-                    ClassName = obj.__class__.__name__
-                    keyName = ClassName + "." + obj.id
-                    result[keyName] = obj
+                if id is not None:
+                    obj = self.__session.query(clss).get(id)
+                    if obj is not None:
+                        ClassName = obj.__class__.__name__
+                        keyName = ClassName + "." + str(obj.id)
+                        result[keyName] = obj
+                else:
+                    for obj in self.__session.query(clss).all():
+                        ClassName = obj.__class__.__name__
+                        keyName = ClassName + "." + str(obj.id)
+                        result[keyName] = obj
         return result
+
+    def search(self, cls, id):
+        """ def doc """
+        data = self.all(cls)
 
     def new(self, obj):
         """add new obj"""
@@ -73,3 +99,7 @@ class DBStorage:
         """delete from the current database session"""
         if obj:
             self.__session.delete(obj)
+
+    def close(self):
+        """doc meth"""
+        self.__session.close()
